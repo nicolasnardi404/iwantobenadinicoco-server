@@ -67,8 +67,8 @@ async function generatePoem() {
         });
         const poemGenerated = response.choices[0].message.content;
 
-        const query = 'INSERT INTO poems(poem) VALUES(?)';
-        db.query(query, [poemGenerated], (err, results) => {
+        const query = 'INSERT INTO poems(poem, promptPoem) VALUES(?,?)';
+        db.query(query, [poemGenerated,chooseMessage.content], (err, results) => {
             if (err) {
                 throw err;
             }
@@ -117,10 +117,10 @@ const maybeGenerateASecondPoemCronJob = cron.schedule('0 0 * * *', async () => {
     }
 
 })
- 
 
 generatePoemCronJob.start();
 maybeGenerateASecondPoemCronJob.start();
+generatePoem();
 
 app.listen(8080, () => {
     console.log('Server listening on port 8080');
