@@ -1,12 +1,10 @@
 //ENDPOINTS
 
-it('GET API from http://localhost:8080/ should return 200', async()=>{
+it("GET API from http://localhost:8080/ should return 200", async () => {
   jest.setTimeout(100000);
-  const response = await fetch('http://localhost:8080');
+  const response = await fetch("http://localhost:8080");
   expect(response.status).toBe(200);
-})
-
-
+});
 
 //#TODO - mock this function to make sure its not fully running and ading data to db
 
@@ -16,8 +14,8 @@ it('GET API from http://localhost:8080/ should return 200', async()=>{
 //     const data = await response.json();
 //     jest.setTimeout(100000);
 //     expect(data.poem).toBeDefined();
-    
+
 //     expect(data.message).toContain('Poem inserted with ID:');
-    
+
 //   });
 // });
