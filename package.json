@@ -4,12 +4,19 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "jest"
+    "start": "node api/index.js",
+    "test": "jest",
+    "generate-prisma": "prisma generate",
+    "postinstall": "prisma generate",
+    "build": "npm run generate-prisma && npm run start",
+    "deploy": "vercel deploy --prod"
   },
   "author": "",
   "license": "MIT",
   "description": "",
   "dependencies": {
+    "@prisma/client": "^5.16.1",
+    "prisma": "^4.10.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
