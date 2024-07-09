@@ -15,6 +15,77 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
+app.get("/", async (req, res) => {
+  try {
+    const poems = await prisma.poetryMaker.findMany({
+      where: {
+        date: {
+          lt: new Date(),
+        },
+      },
+      orderBy: {
+        id: "desc", // Sort by date in descending order
+      },
+    });
+
+    // Format the date for each poem
+    const formattedPoems = poems.map((poem) => ({
+      ...poem,
+      date: formatDate(poem.date),
+    }));
+
+    res.json(formattedPoems);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/generate-poem", generatePoem);
+
+app.get("/count", async (req, res) => {
+  try {
+    const numberOfPoems = await prisma.poetryMaker.count();
+    res.json(numberOfPoems);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/poems", async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+
+  try {
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+
+    // Fetch poems within the calculated range
+    const poems = await prisma.poetryMaker.findMany({
+      where: {
+        id: {
+          gte: startIndex,
+          lte: endIndex,
+        },
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
+
+    res.json(poems);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  let day = date.getDate().toString().padStart(2, "0");
+  let month = (date.getMonth() + 1).toString().padStart(2, "0");
+  let year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 async function generatePoem(req, res) {
   try {
     const randomMessage = [
@@ -95,16 +166,5 @@ async function generatePoem(req, res) {
     res.status(500).json({ error: error.message }); // Respond with an error message
   }
 }
-
-app.get("/", async (req, res) => {
-  try {
-    const poems = await prisma.poetryMaker.findMany();
-    res.json(poems);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get("/generate-poem", generatePoem); // Directly use the generatePoem function as the handler
 
 export default app;
