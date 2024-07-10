@@ -16,9 +16,7 @@ const openai = new OpenAI({
 });
 
 function authenticateCronJob(req, res, next) {
-  console.log(req.headers);
   const authHeader = req.headers.authorization;
-  console.log(authHeader);
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).send("Unauthorized");
   }
@@ -36,6 +34,7 @@ app.get("/", async (req, res) => {
       orderBy: {
         id: "desc", // Sort by date in descending order
       },
+      take: 10,
     });
 
     // Format the date for each poem
@@ -74,7 +73,10 @@ app.get("/poems", async (req, res) => {
       where: {
         id: {
           gte: startIndex,
-          lte: endIndex,
+          lte: endIndex - 1,
+        },
+        date: {
+          lt: new Date(),
         },
       },
       orderBy: {
@@ -112,7 +114,7 @@ async function generatePoem(req, res) {
       {
         role: "user",
         content:
-          "Craft a poem contemplating the transformation into mushrooms or machines upon death",
+          "Craft a poem contemplating the transformation into mushrooms, machines, or any nature form upon death",
       },
       {
         role: "user",
