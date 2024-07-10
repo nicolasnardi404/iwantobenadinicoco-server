@@ -15,6 +15,16 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
+function authenticateCronJob(req, res, next) {
+  console.log(req.headers);
+  const authHeader = req.headers.authorization;
+  console.log(authHeader);
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).send("Unauthorized");
+  }
+  next();
+}
+
 app.get("/", async (req, res) => {
   try {
     const poems = await prisma.poetryMaker.findMany({
@@ -40,7 +50,7 @@ app.get("/", async (req, res) => {
   }
 });
 
-app.get("/generate-poem", generatePoem);
+app.get("/generate-poem", authenticateCronJob, generatePoem);
 
 app.get("/count", async (req, res) => {
   try {
@@ -166,5 +176,6 @@ async function generatePoem(req, res) {
     res.status(500).json({ error: error.message }); // Respond with an error message
   }
 }
+app.listen(3000);
 
 export default app;
