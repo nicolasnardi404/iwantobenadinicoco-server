@@ -32,18 +32,12 @@ app.get("/", async (req, res) => {
         },
       },
       orderBy: {
-        id: "desc", // Sort by date in descending order
+        id: "desc",
       },
       take: 10,
     });
 
-    // Format the date for each poem
-    const formattedPoems = poems.map((poem) => ({
-      ...poem,
-      date: formatDate(poem.date),
-    }));
-
-    res.json(formattedPoems);
+    res.json(poems);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -90,26 +84,32 @@ app.get("/poems", async (req, res) => {
   }
 });
 
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  let day = date.getDate().toString().padStart(2, "0");
-  let month = (date.getMonth() + 1).toString().padStart(2, "0");
-  let year = date.getFullYear();
-  return `${day}/${month}/${year}`;
-}
-
 async function generatePoem(req, res) {
   try {
     const randomMessage = [
       {
         role: "user",
-        content: "Write existential poems about being a machine",
+        content:
+          "Write a poem about the fall of patriarchy into a genderless world",
       },
-      { role: "user", content: "Write poems about machines and love" },
       {
         role: "user",
         content:
-          "Write experimental poems about nonsense topics that make sense in the end",
+          "Write a poem about death and the transformation of the body in something else",
+      },
+      {
+        role: "user",
+        content:
+          "Write a poem about the existential crisis of been a machine that write poetry",
+      },
+      {
+        role: "user",
+        content:
+          "Write a poem about love and transformation and insects. dont be sexist.",
+      },
+      {
+        role: "user",
+        content: "Write poems about machines and love. dont be sexist",
       },
       {
         role: "user",
@@ -118,7 +118,27 @@ async function generatePoem(req, res) {
       },
       {
         role: "user",
-        content: "Write a poem reflecting society of the world",
+        content:
+          "Write a poem about the search for identity in a post-human society. dont be sexist",
+      },
+      {
+        role: "user",
+        content:
+          "Write a poem about the resurrection of extinct species through technology.",
+      },
+      {
+        role: "user",
+        content: "Write a poem about you machines's dreams",
+      },
+      {
+        role: "user",
+        content:
+          "Write a poem about the journey of a soul through different forms of consciousness.",
+      },
+      {
+        role: "user",
+        content:
+          "Write a poem about love from humans to machines to nature. dont be sexist",
       },
     ];
 
@@ -133,13 +153,13 @@ async function generatePoem(req, res) {
     const messages = [
       {
         role: "system",
-        content: "You are a poetry machine that makes poems max 20 lines",
+        content: "You are a poetry machine that makes poems max 30 lines.",
       },
       chooseMessage,
     ];
 
     const response = await openai.chat.completions.create({
-      model: "ft:gpt-3.5-turbo-0125:personal:copynicv-3:9UtycjS0",
+      model: "ft:gpt-3.5-turbo-0125:personal:iwannabenadinicoco:9lDbMOuI",
       messages: messages,
     });
 
