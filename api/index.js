@@ -159,6 +159,8 @@ async function generatePoem(req, res) {
     let attempts = 0;
     const maxAttempts = 3;
 
+    console.log(chooseMessage);
+
     while (containsForbidden && attempts < maxAttempts) {
       const messages = [
         {
@@ -188,29 +190,49 @@ async function generatePoem(req, res) {
       }
     }
 
-    const currentDate = new Date();
-    // Generate a random hour between 0 and 23
-    const randomHour = Math.floor(Math.random() * 24);
-    // Generate a random minute between 0 and 59
-    const randomMinute = Math.floor(Math.random() * 60);
-    // Generate a random second between 0 and 59
-    const randomSecond = Math.floor(Math.random() * 60);
+    let latestDate = await prisma.poetryMaker
+      .findFirst({
+        orderBy: {
+          date: "desc",
+        },
+        select: {
+          date: true,
+        },
+      })
+      .then((result) => (result ? result.date : null));
 
-    // Create a new Date object with the random time
-    const randomTime = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      currentDate.getDate(),
-      randomHour,
-      randomMinute,
-      randomSecond
+    if (latestDate.toDateString() != new Date().toDateString()) {
+      latestDate = new Date();
+    }
+
+    const today = latestDate;
+
+    const startDate = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
     );
+    // endDate set for 24h from startDate
+    const endDate = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      23,
+      59,
+      59,
+      999
+    );
+
+    const randomDate = randomDateBetween(startDate, endDate);
+
+    const poemId = (await prisma.poetryMaker.count()) + 1;
 
     const result = await prisma.poetryMaker.create({
       data: {
+        id: poemId,
         poem: poemGenerated,
         prompt: chooseMessage.content,
-        date: randomTime,
+        date: randomDate,
       },
     });
 
@@ -218,14 +240,25 @@ async function generatePoem(req, res) {
     res.status(200).json(result);
   } catch (error) {
     console.error(error.message);
-    res.status(500).json({ error: error.message }); // Respond with an error message
+    res.status(500).json({ error: error.message });
   }
+}
+
+function randomDateBetween(start, end) {
+  return new Date(
+    start.getTime() + Math.random() * (end.getTime() - start.getTime())
+  );
 }
 
 //Filter for no bias poems
 
 const forbiddenWords = [
+  //other words
+  "gangbang",
   // Racial slurs and offensive terms
+  "slaves",
+  "slave",
+  "slavered",
   "n-word",
   "n****",
   "nigga",
