@@ -157,7 +157,7 @@ async function generatePoem(req, res) {
     let poemGenerated = "";
     let containsForbidden = true;
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 4;
 
     console.log(chooseMessage);
 
@@ -305,6 +305,8 @@ const forbiddenWords = [
   "wh**e",
   "slut",
   "sl*t",
+  "pussy",
+  "penis",
 
   // Miscellaneous offensive terms
   "retard",
