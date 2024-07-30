@@ -15,7 +15,7 @@
   "crons": [
     {
       "path": "/generate-poem",
-      "schedule": "0 22 * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
