@@ -295,6 +295,8 @@ const forbiddenWords = [
   "f**got",
   "dyke",
   "dike",
+  "cock",
+  "cocks",
   "tranny",
   "tr**ny",
   "shemale",
