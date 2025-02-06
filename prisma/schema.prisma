@@ -12,5 +12,6 @@ model poetryMaker {
   id          Int       @id @default(autoincrement())
   poem        String
   date        DateTime
-  prompt  String
+  prompt      String
+  token       String?   @unique
 }

@@ -3,6 +3,11 @@ import cors from "cors";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
+import { BskyAgent } from "@atproto/api";
+import crypto from "crypto";
+import { HfInference } from "@huggingface/inference";
+import sharp from "sharp";
+import fetch from "node-fetch";
 
 dotenv.config();
 const prisma = new PrismaClient();
@@ -14,6 +19,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   dangerouslyAllowBrowser: true,
 });
+
+const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
 function authenticateCronJob(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -226,6 +233,7 @@ async function generatePoem(req, res) {
     const randomDate = randomDateBetween(startDate, endDate);
 
     const poemId = (await prisma.poetryMaker.count()) + 1;
+    const token = generateToken(); // Generate token first
 
     const result = await prisma.poetryMaker.create({
       data: {
@@ -233,11 +241,15 @@ async function generatePoem(req, res) {
         poem: poemGenerated,
         prompt: chooseMessage.content,
         date: randomDate,
+        token: token,
       },
     });
 
     console.log(`Poem inserted with ID: ${result.id}`);
     res.status(200).json(result);
+
+    // Now create Bluesky post with the same token
+    await createBlueskyPost(poemGenerated, chooseMessage.content, token);
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: error.message });
@@ -248,6 +260,10 @@ function randomDateBetween(start, end) {
   return new Date(
     start.getTime() + Math.random() * (end.getTime() - start.getTime())
   );
+}
+
+function generateToken() {
+  return crypto.randomBytes(4).toString("hex");
 }
 
 //Filter for no bias poems
@@ -357,5 +373,200 @@ const forbiddenWords = [
   "overdose",
   "overdosing",
 ];
+
+async function createBlueskyPost(poem, prompt, token) {
+  const agent = new BskyAgent({
+    service: "https://bsky.social",
+  });
+
+  try {
+    await agent.login({
+      identifier: process.env.BLUESKY_IDENTIFIER,
+      password: process.env.BLUESKY_PASSWORD,
+    });
+
+    const messages = [
+      {
+        role: "system",
+        content:
+          "Create a short, engaging post about the poem made by machines that is been send. no hashtags(max 200 characters)",
+      },
+      {
+        role: "user",
+        content: `Here's the poem: ${poem}`,
+      },
+    ];
+
+    const response = await openai.chat.completions.create({
+      model: "ft:gpt-3.5-turbo-0125:personal:iwannabenadinicoco:9lDbMOuI",
+      messages: messages,
+    });
+
+    const postContent = response.choices[0].message.content;
+    const poemUrl = `iwannabenadinicoco.com/poem/${token}`;
+    const postText = `${postContent}\n\n${poemUrl}`;
+
+    // Create facets for the link
+    const urlIndex = postText.indexOf(poemUrl);
+    const facets = [
+      {
+        index: {
+          byteStart: urlIndex,
+          byteEnd: urlIndex + poemUrl.length,
+        },
+        features: [
+          {
+            $type: "app.bsky.richtext.facet#link",
+            uri: `https://${poemUrl}`,
+          },
+        ],
+      },
+    ];
+
+    // Post to Bluesky with facets
+    await agent.post({
+      text: postText,
+      facets: facets,
+      createdAt: new Date().toISOString(),
+    });
+
+    console.log("Successfully posted to Bluesky!");
+    return token; // Return the token for database storage
+  } catch (error) {
+    console.error("Error posting to Bluesky:", error);
+    throw error; // Propagate the error to handle it in the calling function
+  }
+}
+
+async function testPoemAndBluesky() {
+  try {
+    const randomMessage = {
+      role: "user",
+      content: "Write a test poem about machines and love. dont be sexist",
+    };
+
+    const messages = [
+      {
+        role: "system",
+        content: "You are a poetry machine that makes poems max 30 lines.",
+      },
+      randomMessage,
+    ];
+
+    // Generate poem
+    const response = await openai.chat.completions.create({
+      model: "ft:gpt-3.5-turbo-0125:personal:iwannabenadinicoco:9lDbMOuI",
+      messages: messages,
+    });
+
+    const poemGenerated = response.choices[0].message.content;
+    console.log("\nGenerated Poem:", poemGenerated);
+
+    // Connect to Bluesky and prepare post
+    const agent = new BskyAgent({
+      service: "https://bsky.social",
+    });
+
+    await agent.login({
+      identifier: process.env.BLUESKY_IDENTIFIER,
+      password: process.env.BLUESKY_PASSWORD,
+    });
+
+    const socialMessages = [
+      {
+        role: "system",
+        content:
+          "Create a short, engaging post about the poem made by machines that is been send. no hashtags(max 200 characters)",
+      },
+      {
+        role: "user",
+        content: `Here's the poem: ${poemGenerated}`,
+      },
+    ];
+
+    const socialResponse = await openai.chat.completions.create({
+      model: "ft:gpt-3.5-turbo-0125:personal:iwannabenadinicoco:9lDbMOuI",
+      messages: socialMessages,
+    });
+
+    const postContent = socialResponse.choices[0].message.content;
+    const poemUrl = `iwannabenadinicoco.com`;
+    const postText = `${postContent}\n\na new poem every day at ${poemUrl}`;
+
+    // Create facets for the link
+    const urlIndex = postText.indexOf(poemUrl);
+    const facets = [
+      {
+        index: {
+          byteStart: urlIndex,
+          byteEnd: urlIndex + poemUrl.length,
+        },
+        features: [
+          {
+            $type: "app.bsky.richtext.facet#link",
+            uri: `https://${poemUrl}`,
+          },
+        ],
+      },
+    ];
+
+    // Prepare post data
+    const postData = {
+      text: postText,
+      facets: facets,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Post to Bluesky
+    await agent.post(postData);
+
+    return {
+      success: true,
+      poem: poemGenerated,
+      post: postContent,
+      blueskyPosted: true,
+    };
+  } catch (error) {
+    console.error("Test Error:", error);
+    return {
+      success: false,
+      error: error.message,
+      stage: error.stage || "unknown",
+    };
+  }
+}
+
+app.get("/test-poem-bluesky", async (req, res) => {
+  try {
+    const result = await testPoemAndBluesky();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/poem/:token", async (req, res) => {
+  try {
+    const poem = await prisma.poetryMaker.findUnique({
+      where: {
+        token: req.params.token,
+      },
+    });
+
+    if (!poem) {
+      return res.status(404).json({ error: "Poem not found" });
+    }
+
+    res.json(poem);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 export default app;
