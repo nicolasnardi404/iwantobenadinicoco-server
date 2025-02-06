@@ -245,11 +245,18 @@ async function generatePoem(req, res) {
       },
     });
 
-    console.log(`Poem inserted with ID: ${result.id}`);
-    res.status(200).json(result);
+    // Create Bluesky post before sending response
+    try {
+      await createBlueskyPost(poemGenerated, chooseMessage.content, token);
+      console.log(
+        `Successfully created poem ID: ${result.id} and posted to Bluesky`
+      );
+    } catch (blueskyError) {
+      console.error("Failed to post to Bluesky:", blueskyError);
+      throw new Error("Failed to post to Bluesky: " + blueskyError.message);
+    }
 
-    // Now create Bluesky post with the same token
-    await createBlueskyPost(poemGenerated, chooseMessage.content, token);
+    res.status(200).json(result);
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: error.message });
