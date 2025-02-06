@@ -382,15 +382,18 @@ const forbiddenWords = [
 ];
 
 async function createBlueskyPost(poem, prompt, token) {
+  console.log("Starting Bluesky post process...");
   const agent = new BskyAgent({
     service: "https://bsky.social",
   });
 
   try {
+    console.log("Attempting Bluesky login...");
     await agent.login({
       identifier: process.env.BLUESKY_IDENTIFIER,
       password: process.env.BLUESKY_PASSWORD,
     });
+    console.log("Successfully logged into Bluesky");
 
     const messages = [
       {
@@ -404,6 +407,7 @@ async function createBlueskyPost(poem, prompt, token) {
       },
     ];
 
+    console.log("Generating post content with OpenAI...");
     const response = await openai.chat.completions.create({
       model: "ft:gpt-3.5-turbo-0125:personal:iwannabenadinicoco:9lDbMOuI",
       messages: messages,
@@ -413,7 +417,8 @@ async function createBlueskyPost(poem, prompt, token) {
     const poemUrl = `iwannabenadinicoco.com/poem/${token}`;
     const postText = `${postContent}\n\n${poemUrl}`;
 
-    // Create facets for the link
+    console.log("Generated post text:", postText);
+
     const urlIndex = postText.indexOf(poemUrl);
     const facets = [
       {
@@ -430,7 +435,7 @@ async function createBlueskyPost(poem, prompt, token) {
       },
     ];
 
-    // Post to Bluesky with facets
+    console.log("Attempting to post to Bluesky...");
     await agent.post({
       text: postText,
       facets: facets,
@@ -438,10 +443,10 @@ async function createBlueskyPost(poem, prompt, token) {
     });
 
     console.log("Successfully posted to Bluesky!");
-    return token; // Return the token for database storage
+    return token;
   } catch (error) {
     console.error("Error posting to Bluesky:", error);
-    throw error; // Propagate the error to handle it in the calling function
+    throw error;
   }
 }
 
