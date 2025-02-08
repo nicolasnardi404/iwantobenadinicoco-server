@@ -399,7 +399,7 @@ async function createBlueskyPost(poem, prompt, token) {
       {
         role: "system",
         content:
-          "Create a short, engaging post about the poem made by machines that is been send. no hashtags(max 200 characters)",
+          "you are a bot specialized on make short resume of poetry. the text you write is underground, experimental, uses easy english, punk, inspired by the way of writing of the poem. no hashtags(max 150 characters)",
       },
       {
         role: "user",
@@ -409,13 +409,13 @@ async function createBlueskyPost(poem, prompt, token) {
 
     console.log("Generating post content with OpenAI...");
     const response = await openai.chat.completions.create({
-      model: "ft:gpt-3.5-turbo-0125:personal:iwannabenadinicoco:9lDbMOuI",
+      model: "gpt-4o-mini",
       messages: messages,
     });
 
     const postContent = response.choices[0].message.content;
     const poemUrl = `iwannabenadinicoco.com/poem/${token}`;
-    const postText = `${postContent}\n\n${poemUrl}`;
+    const postText = `${postContent}\n\na new poem every day at ${poemUrl}`;
 
     console.log("Generated post text:", postText);
 
@@ -488,7 +488,7 @@ async function testPoemAndBluesky() {
       {
         role: "system",
         content:
-          "Create a short, engaging post about the poem made by machines that is been send. no hashtags(max 200 characters)",
+          "you are a bot specialized on make short resume of poetry. the text you write is underground, experimental, uses easy english, punk, inspired by the way of writing of the poem. no hashtags(max 150 characters)",
       },
       {
         role: "user",
@@ -497,7 +497,7 @@ async function testPoemAndBluesky() {
     ];
 
     const socialResponse = await openai.chat.completions.create({
-      model: "ft:gpt-3.5-turbo-0125:personal:iwannabenadinicoco:9lDbMOuI",
+      model: "gpt-4o-mini",
       messages: socialMessages,
     });
 
