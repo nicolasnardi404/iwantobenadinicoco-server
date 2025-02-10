@@ -414,22 +414,28 @@ async function createBlueskyPost(poem, prompt, token) {
     });
 
     const postContent = response.choices[0].message.content;
-    const poemUrl = `iwannabenadinicoco.com/poem/${token}`;
-    const postText = `${postContent}\n\na new poem every day at ${poemUrl}`;
+    const postText = `${postContent}\n\n i wanna be nadi nicoco - poetry made by machines`;
 
-    console.log("Generated post text:", postText);
+    // Create facets for the link
+    const textEncoder = new TextEncoder();
+    const bytes = textEncoder.encode(postText);
 
-    const urlIndex = postText.indexOf(poemUrl);
+    // Find the byte index where the link text starts
+    const linkText = "i wanna be nadi nicoco";
+    const linkIndex = postText.indexOf(linkText);
+    const byteStart = textEncoder.encode(postText.slice(0, linkIndex)).length;
+    const byteEnd = byteStart + textEncoder.encode(linkText).length;
+
     const facets = [
       {
         index: {
-          byteStart: urlIndex,
-          byteEnd: urlIndex + poemUrl.length,
+          byteStart: byteStart,
+          byteEnd: byteEnd,
         },
         features: [
           {
             $type: "app.bsky.richtext.facet#link",
-            uri: `https://${poemUrl}`,
+            uri: `https://iwannabenadinicoco.com/poem/${token}`,
           },
         ],
       },
@@ -502,21 +508,29 @@ async function testPoemAndBluesky() {
     });
 
     const postContent = socialResponse.choices[0].message.content;
-    const poemUrl = `iwannabenadinicoco.com`;
-    const postText = `${postContent}\n\na new poem every day at ${poemUrl}`;
+    const testToken = generateToken();
+    const postText = `${postContent}\n\n i wanna be nadi nicoco - poetry made by machines`;
 
     // Create facets for the link
-    const urlIndex = postText.indexOf(poemUrl);
+    const textEncoder = new TextEncoder();
+    const bytes = textEncoder.encode(postText);
+
+    // Find the byte index where "click here" starts
+    const linkText = "i wanna be nadi nicoco";
+    const linkIndex = postText.indexOf(linkText);
+    const byteStart = textEncoder.encode(postText.slice(0, linkIndex)).length;
+    const byteEnd = byteStart + textEncoder.encode(linkText).length;
+
     const facets = [
       {
         index: {
-          byteStart: urlIndex,
-          byteEnd: urlIndex + poemUrl.length,
+          byteStart: byteStart,
+          byteEnd: byteEnd,
         },
         features: [
           {
             $type: "app.bsky.richtext.facet#link",
-            uri: `https://${poemUrl}`,
+            uri: `https://iwannabenadinicoco.com/poem/${testToken}`,
           },
         ],
       },
